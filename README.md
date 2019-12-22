@@ -7,3 +7,5 @@ androiduser:id-int(11),主键，自动递增,user-varchar(255),pswd-varchar(255)
 
 效果图：长按图片保存或分享
 https://github.com/suxiaomie/PictureShareApp/blob/master/login.jpg
+https://github.com/suxiaomie/PictureShareApp/blob/master/look.jpg
+https://github.com/suxiaomie/PictureShareApp/blob/master/about.jpg
