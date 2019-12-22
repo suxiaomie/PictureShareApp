@@ -4,3 +4,6 @@ share picture app using okhttp
 MyEclipse:https://github.com/suxiaomie/MyEclipse-PictureShareApp.git
 androidrecord：id-int(11),主键，自动递增,name-varchar(255),count-int(11),fronId-int(11)
 androiduser:id-int(11),主键，自动递增,user-varchar(255),pswd-varchar(255)
+
+效果图：长按图片保存或分享
+https://github.com/suxiaomie/PictureShareApp/blob/master/login.jpg
