@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".TestActivity">
+
+    <LinearLayout
+        android:id="@+id/ly_tab_bar"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_alignParentBottom="true"
+        android:background="@color/bg_white"
+        android:orientation="horizontal">
+
+        <RelativeLayout
+            android:id="@+id/bar1"
+            android:layout_weight="1"
+            android:layout_width="0dp"
+            android:layout_height="match_parent">
+
+            <ImageView
+                android:id="@+id/iv_bar_img1"
+                android:layout_width="27dp"
+                android:layout_height="27dp"
+                android:layout_alignParentTop="true"
+                android:layout_centerHorizontal="true"
+                android:layout_marginTop="3dp"
+                android:src="@drawable/ic_folder_open_black_24dp" />
+            <TextView
+                android:id="@+id/txt_1"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_alignParentBottom="true"
+                android:layout_centerHorizontal="true"
+                android:layout_marginBottom="3dp"
+                android:layout_below="@+id/iv_bar_img1"
+                android:gravity="center"
+                android:maxLines="1"
+                android:text="上传"
+                android:textColor="@color/colorPrimary"
+                android:textSize="14sp"
+                />
+        </RelativeLayout>
+        <RelativeLayout
+            android:id="@+id/bar2"
+            android:layout_weight="1"
+            android:layout_width="0dp"
+            android:layout_height="match_parent">
+            <ImageView
+                android:id="@+id/iv_bar_img2"
+                android:layout_width="27dp"
+                android:layout_height="27dp"
+                android:layout_alignParentTop="true"
+                android:layout_centerHorizontal="true"
+                android:layout_marginTop="3dp"
+                android:src="@drawable/ic_radio_button_checked_black_24dp" />
+            <TextView
+                android:id="@+id/txt_2"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_alignParentBottom="true"
+                android:layout_centerHorizontal="true"
+                android:layout_marginBottom="3dp"
+                android:gravity="center"
+                android:layout_below="@+id/iv_bar_img2"
+                android:maxLines="1"
+                android:text="浏览"
+                android:textColor="#000000"
+                android:textSize="14sp"
+                />
+
+        </RelativeLayout>
+        <RelativeLayout
+            android:id="@+id/bar3"
+            android:layout_weight="1"
+            android:layout_width="0dp"
+            android:layout_height="match_parent">
+            <ImageView
+                android:id="@+id/iv_bar_img3"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_alignParentTop="true"
+                android:layout_centerHorizontal="true"
+                android:layout_marginTop="3dp"
+                android:src="@drawable/ic_person_outline_black_24dp" />
+
+            <TextView
+                android:id="@+id/txt_3"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_alignParentBottom="true"
+                android:layout_centerHorizontal="true"
+                android:layout_marginBottom="3dp"
+                android:layout_below="@+id/iv_bar_img3"
+                android:gravity="center"
+                android:maxLines="1"
+                android:text="我的"
+                android:textColor="@color/colorPrimary"
+                android:textSize="14sp"
+                />
+        </RelativeLayout>
+
+    </LinearLayout>
+
+    <View
+        android:id="@+id/tabBar"
+        android:layout_width="match_parent"
+        android:layout_height="1px"
+        android:layout_above="@id/ly_tab_bar"
+        android:background="@color/colorPrimaryDark" />
+
+    <FrameLayout
+        android:id="@+id/content_frament"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@id/tabBar"
+        >
+    </FrameLayout>
+
+</RelativeLayout>

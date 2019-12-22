@@ -1,0 +1,500 @@
+package com.example.mcl.picshare;
+
+import android.Manifest;
+import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Handler;
+import android.os.Message;
+import android.provider.MediaStore;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AppCompatActivity;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.Toast;
+import com.alibaba.fastjson.JSON;
+import com.example.mcl.picshare.beans.Androidrecord;
+import com.example.mcl.picshare.utils.FileUtil;
+
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.FormBody;
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+
+import static com.example.mcl.picshare.LoginActivity.USERID;
+
+public class MainActivity extends AppCompatActivity {
+
+    //上传文件
+    private Context context;
+    private Button chooseBT;
+    private Button uploadBT;
+//    private Button loadBT;
+    private ImageView imgIV;
+
+    //加载图片
+    private Button jsonBT;
+    private ImageView picShowIV;
+    private Button lastBT;
+    private Button countBT;
+    private Button nextBT;
+
+    //相关数据
+    private String upLoadFilePath = "";
+    private String upLoadFileName = "";
+    private int userId = 0; //用户id
+    private int picID = -1;//当前图片id
+    private int listIndex = 0;//当前list的下标
+    private String picUrl = "";//当前图片名字
+    private int picCount = -1;
+    private List<Androidrecord> dataList = new ArrayList<>();
+
+    //分页处理
+    int page = 0;
+    int allpage = 0;
+    final int onePage = 5;
+
+    //点赞
+    private boolean isCount = true;//只有没点过才能点
+
+    //服务器接口地址
+    final static String ip               = "http://192.168.1.105:8080";
+    final static String uploadHost      = ip + "/AndroidServer/Upload";
+    final static String downHost        = ip + "/AndroidServer/img/";
+    final static String loginHost       = ip + "/AndroidServer/Login";
+    final static String signinHost      = ip + "/AndroidServer/Signin";
+    final static String jsonHost        = ip + "/AndroidServer/Download";
+    final static String addCountHost    = ip + "/AndroidServer/AddCount";
+    final static String pageHost        = ip + "/AndroidServer/Page";
+
+    //Handler异步刷新
+    private Handler mHandler = new Handler(){
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            switch (msg.what){
+                case 1:
+                    //拿到obj中的数据
+                    byte[] bytes = (byte[]) msg.obj;
+                    //使用BitmapFactory将字节转换成bitmap类型
+                    Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                    //设置图片
+                    imgIV.setImageBitmap(bitmap);
+                    String t = Integer.toString(picCount);
+                    countBT.setText("赞"+ t);
+                    isCount = false;
+                    break;
+                case 0:
+                    Toast.makeText(MainActivity.this, "请求数据失败", Toast.LENGTH_SHORT).show();
+                    break;
+                case 0x123:
+                    picCount++;
+                    t = Integer.toString(picCount);
+                    countBT.setText("赞"+ t);
+                    isCount = true;
+                    break;
+            }
+        }
+    };
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        context = MainActivity.this;
+        Intent intent = getIntent();
+        userId = intent.getIntExtra(USERID,0);
+
+        requestPermission();
+        uiBind();
+        regLinstener();
+
+    }
+
+    /**
+     * 组件绑定
+     */
+    public void uiBind(){
+        chooseBT = findViewById(R.id.chooseBT);
+        uploadBT = findViewById(R.id.uploadBT);
+        //loadBT = findViewById(R.id.loadBT);
+        imgIV = findViewById(R.id.imgIV);
+        jsonBT = findViewById(R.id.jsonBT);
+        lastBT = findViewById(R.id.lastPicBT);
+        countBT = findViewById(R.id.countBT);
+        nextBT = findViewById(R.id.nextPicBT);
+    }
+
+    /**
+     * 注册监听器
+     */
+    public void regLinstener(){
+
+        chooseBT.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent();
+                intent.setDataAndType(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image/*");
+                startActivityForResult(intent, 103);
+            }
+        });
+
+        uploadBT.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                upLoad(userId,upLoadFilePath,upLoadFileName);
+            }
+        });
+
+//        loadBT.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                //downLoad();
+//            }
+//        });
+
+        jsonBT.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //重置数据
+                page = 0;
+                listIndex = 0;
+                loadJson(0,5,jsonHost);
+            }
+        });
+
+        lastBT.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                lastPic();
+            }
+        });
+
+        countBT.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //未点击才能点击
+                if(!isCount)    addCount(picID,addCountHost);
+            }
+        });
+
+        nextBT.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                nextPic();
+            }
+        });
+    }
+
+    /**
+     * 上传文件
+     * @param fromId 上传者ID
+     * @param filePath 上传图片的路径
+     * @param fileName 上传图片的名字
+     */
+    private void upLoad(int fromId,String filePath,String fileName) {
+        //创建文件对象
+        File file = new File(filePath);
+        //创建RequestBody封装参数
+        RequestBody fileBody = RequestBody.create(MediaType.parse("application/octet-stream"), file);
+        //创建MultiparBody,给RequestBody进行设置  顺便封装参数
+        MultipartBody multipartBody = new MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart("image", fileName, fileBody)
+                .addFormDataPart("fromId",Integer.toString(fromId)) //上传id
+                .build();
+        //创建Request
+        Request request = new Request.Builder()
+                .url(uploadHost)
+                .post(multipartBody)
+                .build();
+        //创建okHttpClient
+        OkHttpClient client = new OkHttpClient.Builder()
+                .readTimeout(8, TimeUnit.SECONDS)
+                .connectTimeout(8, TimeUnit.SECONDS)
+                .writeTimeout(8,TimeUnit.SECONDS)
+                .build();
+        //创建call对象
+        Call call = client.newCall(request);
+        call.enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Log.e("上传文件","e=" + e);
+            }
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                String temp = response.body().string().trim();
+                Log.e("上传文件",temp);
+            }
+        });
+
+    }
+
+    /**
+     * 从picUrl下载图片，通知刷新
+     * @param picUrl
+     */
+    private void downLoad(String picUrl) {
+        //创建okHttp
+        OkHttpClient client = new OkHttpClient.Builder()
+                .connectTimeout(8, TimeUnit.SECONDS)
+                .readTimeout(8, TimeUnit.SECONDS)
+                .build();
+        //创建request
+        Request request = new Request.Builder()
+                .url(downHost + picUrl).build();
+        //创建call
+        Call call = client.newCall(request);
+        call.enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                mHandler.sendEmptyMessage(0);
+            }
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                //将流转换成字节
+                byte[] bytes = response.body().bytes();
+                //获取message对象
+                Message message = mHandler.obtainMessage();
+                //将字节存入obj
+                message.obj = bytes ;
+                //设置一个标识
+                message.what = 1;
+                //发送
+                mHandler.sendMessage(message);
+            }
+        });
+    }
+
+    /**
+     * 请求json数据，调用json解析
+     * @param startIndex 从startIndex条记录开始
+     * @param count 请求count条数据
+     * @param url 服务器接口地址
+     */
+    private void loadJson(int startIndex,int count,String url){
+
+        getPage(pageHost);
+        OkHttpClient okHttpClient = new OkHttpClient();
+        //创建RequestBody封装参数
+        RequestBody  builder = new FormBody.Builder()
+                .add("startIndex",Integer.toString(startIndex))
+                .add("count",Integer.toString(count))
+                .build();
+        //创建request
+        Request request = new Request.Builder()
+                .url(url)
+                .post(builder)
+                .build();
+        okHttpClient.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Log.e("error","" + e);
+            }
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                String temp = response.body().string();
+                Log.e("请求json","请求完毕");
+                parseJson(temp);
+            }
+        });
+    }
+
+    /**
+     * 将json字符串解析为List集合，并异步加载第一张图片
+     * @param list
+     */
+    public void parseJson(String list){
+        dataList = JSON.parseArray(list,Androidrecord.class);
+        //加载图片的相关数据
+        picID = dataList.get(listIndex).getId();
+        picUrl = dataList.get(listIndex).getName();
+        picCount = dataList.get(listIndex).getCount();
+        downLoad(picUrl);
+    }
+
+    /**
+     * 计算分页数量
+     * @param url   服务器接口地址
+     */
+    public void getPage(String url){
+        OkHttpClient okHttpClient = new OkHttpClient();
+        //创建RequestBody封装参数
+        RequestBody  builder = new FormBody.Builder().build();
+        //创建request
+        Request request = new Request.Builder()
+                .url(url)
+                .post(builder)
+                .build();
+        okHttpClient.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Log.e("Page","" + e);
+            }
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                String temp = response.body().string().trim();
+                allpage = Integer.parseInt(temp)/onePage + 1;
+            }
+        });
+    }
+
+    /**
+     * 上一张图片，并自动加载上一批
+     */
+    public void lastPic(){
+        Log.e("page",page+";index"+listIndex);
+        listIndex--;
+        if(listIndex>=0){
+            picID = dataList.get(listIndex).getId();
+            picUrl = dataList.get(listIndex).getName();
+            picCount = dataList.get(listIndex).getCount();
+            //下载图片，异步加载
+            downLoad(picUrl);
+        }else{
+            //加载上一批
+            if(page>0){
+                page--;
+                listIndex = 4;
+                Log.e("page",page+"list;Index:" + listIndex);
+                loadJson((page)*onePage,onePage,jsonHost);
+            }else{
+                Log.e("无法加载","已经到最前page:" + page);
+                Toast.makeText(context,"已经到最前",Toast.LENGTH_SHORT).show();
+            }
+
+        }
+
+    }
+
+    /**
+     * 下一张图片，并自动加载下一批
+     */
+    public void nextPic(){
+        //预先加载了第1张 到4，再加1即5
+        Log.e("page",page+";index"+listIndex);
+        if(listIndex<dataList.size()-1){
+            listIndex++;
+            picID = dataList.get(listIndex).getId();
+            picUrl = dataList.get(listIndex).getName();
+            picCount = dataList.get(listIndex).getCount();
+            downLoad(picUrl);
+        }else{
+            //加载下一批
+            if(page<allpage-1){
+                page++;
+                listIndex = 0;
+                loadJson(page*onePage,onePage,jsonHost);
+            }else{
+                Log.e("无法加载","已经到最后page:"+page);
+                Toast.makeText(context,"已经到最后",Toast.LENGTH_SHORT).show();
+            }
+        }
+
+    }
+
+    /**
+     * 点赞，并通知刷新
+     * @param id    图片id
+     * @param url   服务器接口地址
+     */
+    public void addCount(int id,String url){
+        OkHttpClient okHttpClient = new OkHttpClient();
+        //创建RequestBody封装参数
+        RequestBody  builder = new FormBody.Builder()
+                .add("picId",Integer.toString(id))
+                .build();
+        //创建request
+        Request request = new Request.Builder()
+                .url(url)
+                .post(builder)
+                .build();
+        okHttpClient.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Log.e("error","" + e);
+            }
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                String temp = response.body().string().trim();
+                Log.e("addCount", temp);
+                if("点赞成功".equals(temp)){
+                    Message message = mHandler.obtainMessage();
+                    message.what = 0x123;
+                    mHandler.sendMessage(message);
+
+                }
+            }
+        });
+    }
+
+    /**
+     * 权限请求
+     */
+    public void requestPermission() {
+        //检查是否已经有该权限
+        if (Build.VERSION.SDK_INT >= 23) {
+            if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions((Activity) MainActivity.this,new String[]{
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                        Manifest.permission.READ_EXTERNAL_STORAGE
+                },1);
+            }else{
+                Log.e("log","权限通过");
+            }
+        }
+    }
+
+    /**
+     * 返回上传文件的路径和文件名
+     * @param requestCode
+     * @param resultCode
+     * @param data
+     */
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 103) {
+            if (resultCode == RESULT_OK) {
+                Uri uri = data.getData();
+                imgIV.setImageURI(uri);
+                if (uri != null) {
+                    String path = FileUtil.getPath(MainActivity.this,uri);
+                    //getPath(this, uri);
+                    Log.e("path",path+"");
+                    if (path != null) {
+                        File file = new File(path);
+                        if (file.exists()) {
+                            upLoadFilePath = file.toString();
+                            upLoadFileName = file.getName();
+                            Log.e("upLoadFileName",upLoadFileName);
+                            Log.e("upLoadFilePath",upLoadFilePath);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

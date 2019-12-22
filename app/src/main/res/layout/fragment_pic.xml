@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".fragments.PicFragment">
+
+    <!--<Button-->
+        <!--android:id="@+id/jsonBT"-->
+        <!--android:text="请求json"-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:layout_height="wrap_content" />-->
+    <ImageView
+        android:id="@+id/picShowIV"
+        android:layout_gravity="center"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:adjustViewBounds="true"
+        android:scaleType="fitXY"
+        android:maxWidth="500pt"
+        android:maxHeight="400dp"
+
+        />
+    <ImageButton
+        android:id="@+id/lastPicBT"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center|left"
+        android:src="@drawable/ic_chevron_left_black_24dp"/>
+
+
+    <!--layout_gravity 在父容器的位置-->
+    <!--gravity 子容器在此布局的位置-->
+    <LinearLayout
+        android:gravity="center"
+        android:layout_gravity="bottom"
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <RelativeLayout
+            android:layout_weight="1"
+            android:layout_width="0dp"
+            android:gravity="right|center"
+            android:layout_height="match_parent">
+            <ImageView
+                android:id="@+id/countIV"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_favorite_border_black_24dp"/>
+            <TextView
+                android:id="@+id/countTV"
+                android:text="0"
+                android:layout_toRightOf="@+id/countIV"
+                android:textSize="18sp"
+                android:layout_width="20dp"
+                android:layout_height="20dp" />
+
+        </RelativeLayout>
+        <RelativeLayout
+            android:layout_weight="1"
+            android:layout_width="0dp"
+            android:gravity="center"
+            android:layout_height="match_parent">
+            <Button
+                android:id="@+id/countBT"
+                android:text="页码"
+                android:background="@color/bg_white"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+        </RelativeLayout>
+
+
+    </LinearLayout>
+
+    <ImageButton
+        android:id="@+id/nextPicBT"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center|right"
+        android:src="@drawable/ic_chevron_right_black_24dp" />
+
+</FrameLayout>
